@@ -4,7 +4,7 @@ Simple Flappy Bird game using PyGame library
 Live version: ---- (WIP) ----
 
 <p align="center">
-<img src="Flappy_Bird_Preview.gif" alt="Flappy Bird in Python Preview"/>
+<img src="Flappy_Bird_Preview.gif" width="500" height="897" alt="Flappy Bird in Python Preview"/>
 </p>
 
 <br>
