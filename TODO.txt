@@ -1,0 +1,5 @@
+1. Create game sound FX
+2. Create simple animation of the bird
+3. Add floor to the game
+4. More visual improvements like background changes
+5. Add hardmode

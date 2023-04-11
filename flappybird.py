@@ -57,50 +57,42 @@ class Pipe:
                 return bird.y + bird.image.get_height() > self.y + 10
         return False
 
-# Initialize Pygame
-pygame.init()
-
-# Load images
-BIRD_IMAGE = pygame.image.load(os.path.join('sprites', 'bird-nyla.png'))
+BIRD_IMAGE = pygame.image.load(os.path.join('sprites', 'bird.png'))
 PIPE_IMAGE = pygame.image.load(os.path.join('sprites', 'pipe.png'))
 BACKGROUND_IMAGE = pygame.image.load(os.path.join('sprites', 'background.png'))
 GET_READY_IMAGE = pygame.image.load(os.path.join('sprites', 'getready.png'))
 GAME_OVER_IMAGE = pygame.image.load(os.path.join('sprites', 'gameover.png'))
 
-# Set up the game window
 WINDOW_WIDTH = BACKGROUND_IMAGE.get_width()
 WINDOW_HEIGHT = BACKGROUND_IMAGE.get_height()
-game_window = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-
-# Alter Image
-BIRD_IMAGE = pygame.transform.scale(BIRD_IMAGE, (int(32), int(32)))
+BIRD_IMAGE = pygame.transform.scale(BIRD_IMAGE, (int(48), int(48)))
 GET_READY_IMAGE = pygame.transform.scale(GET_READY_IMAGE, (int(WINDOW_WIDTH), int(WINDOW_HEIGHT)))
-
-# Pipes
 SPAWN_PIPE_EVENT = pygame.USEREVENT
 
-# Variables and objects
+game_window = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 pipes = []
 scores = []
 score = 0
-running = True
+highestscore = 0
+game_running = True
 game_over = False
 game_started = False
 clock = pygame.time.Clock()
 bird = Bird(50, 400)
 
-# Set the caption / Window title
+pygame.init()
 pygame.display.set_caption("Flappy Bird")
 pygame.time.set_timer(SPAWN_PIPE_EVENT, 1200)
 
 def reset_game():
-    global bird, pipes, score, game_over
+    global bird, pipes, score, game_over, BACKGROUND_IMAGE, PIPE_IMAGE
     bird = Bird(50, 400)
     pipes = []
     score = 0
     game_over = False
-    pygame.time.set_timer(SPAWN_PIPE_EVENT, 0) # Stop timer
-    pygame.time.set_timer(SPAWN_PIPE_EVENT, 1200) # Start timer again
+    pygame.time.set_timer(SPAWN_PIPE_EVENT, 1200)
+    BACKGROUND_IMAGE = pygame.image.load(os.path.join('sprites', 'background.png'))
+    PIPE_IMAGE = pygame.image.load(os.path.join('sprites', 'pipe.png'))
 
 def draw_background():
     game_window.blit(BACKGROUND_IMAGE, (0, 0))
@@ -126,13 +118,12 @@ def draw_game():
     draw_bird(bird)
     for pipe in pipes:
         pipe.draw()
-    font = pygame.font.Font(None, 36)
+    font = pygame.font.Font(None, 48)
     score_text = font.render(f"Score: {score}", True, (255, 255, 255))
     game_window.blit(score_text, (10, 10))
 
-while not game_started:
-    draw_get_ready()
-    # Handle Events
+def event_game_start():
+    global game_started
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -145,18 +136,11 @@ while not game_started:
             game_started = True
             pygame.time.wait(100)
 
-    # Update the display
-    pygame.display.update()
-
-    # Control the frame rate
-    clock.tick(60)
-
-# Game loop
-while running:
-    # Handle Events
+def event_game_over():
+    global game_running
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
+            game_running = False
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 if game_over:
@@ -171,67 +155,53 @@ while running:
         elif event.type == SPAWN_PIPE_EVENT:
             draw_pipes()
 
-    # Update game objects
-    bird.move()
-
-    # Move pipes
+def pipes_manager():
+    global game_over, BACKGROUND_IMAGE, PIPE_IMAGE, pipes, score
     for pipe in pipes:
         pipe.move()
-
-    # Remove off-screen pipes
     pipes = [pipe for pipe in pipes if not pipe.off_screen()]
-
-    # Add score for passing pipes
     for pipe in pipes:
         if not pipe.is_top and not pipe.scored and pipe.x < bird.x:
             pipe.scored = True
             score += 1
-            if score >= 5:
+            if score >= 10:
                 BACKGROUND_IMAGE = pygame.image.load(os.path.join('sprites', 'background-night.png'))
-                BACKGROUND_IMAGE = pygame.transform.scale(BACKGROUND_IMAGE, (WINDOW_WIDTH, WINDOW_HEIGHT))
+                PIPE_IMAGE = pygame.image.load(os.path.join('sprites', 'pipe-red.png'))
         if pipe.off_screen() and pipe.scored:
             pipes.remove(pipe)
-
-    # Check for collisions
     for pipe in pipes:
         if pipe.collides_with(bird):
             game_over = True
 
-    draw_game()
+while not game_started:
+    draw_get_ready()
+    event_game_start()
+    pygame.display.update()
+    clock.tick(60)
 
-    # Check if game is over
+while game_running:
+    event_game_over()
+    bird.move()
+    pipes_manager()
+    draw_game()
     if game_over:
         game_window.blit(GAME_OVER_IMAGE, (WINDOW_WIDTH/2 - GAME_OVER_IMAGE.get_width()/2, WINDOW_HEIGHT/2 - GAME_OVER_IMAGE.get_height()/2))
-        pygame.display.update()
         scores.append(score)
-        print("This session scores: ", scores)
-        # Wait for the user to restart the game
+        font = pygame.font.SysFont(None, 40)
+        highestscore_max = max(scores)
+        highestscore = font.render(f"Highest Score: {highestscore_max}", True, (255, 255, 255))
+        game_window.blit(highestscore, (36, 280))
+        pygame.display.update() 
         while game_over:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    running = False
+                    game_running = False
                     game_over = False
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
-                        # Restart game
-                        bird = Bird(50, 400)
-                        pipes = []
-                        score = 0
-                        game_over = False
-                        pygame.time.set_timer(SPAWN_PIPE_EVENT, 1200)
+                        reset_game()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    # Restart game
-                    bird = Bird(50, 400)
-                    pipes = []
-                    score = 0
-                    game_over = False
-                    pygame.time.set_timer(SPAWN_PIPE_EVENT, 1200)
-    # Update the display
+                    reset_game()
     pygame.display.update()
-
-    # Control the frame rate
     clock.tick(60)
-
-
-#Quit Pygame
 pygame.quit()
