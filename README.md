@@ -31,7 +31,7 @@ Start the game
 
 ## 📝 Tech Stack
 
-Python, PyGame library
+Python
 
 
 ## 👨‍🚀 Show your support
